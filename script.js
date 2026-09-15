@@ -95,8 +95,8 @@ function circuitMarkup() {
   const {out,wire,dot,text,value,gate}=markupHelpers();
   out.push('<rect x="175" y="90" width="540" height="130" class="group-box"/><rect x="175" y="280" width="540" height="130" class="group-box"/>');
   text(440,45,'INGÅNGSLOGIK','section-label','middle');text(965,45,'KORSKOPPLAD LATCH','section-label','middle');
-  text(440,113,'J · CLK · Q̅ → 3-ingångars NAND','svg-label','middle');
-  text(440,397,'K · CLK · Q → 3-ingångars NAND','svg-label','middle');
+  text(350,113,'J · CLK · Q̅ → 3-ingångars NAND','svg-label','middle');
+  text(350,397,'K · CLK · Q → 3-ingångars NAND','svg-label','middle');
   // Upper: NAND(J,CLK), tied-input inverter, NAND(AND(J,CLK),Qbar).
   wire('M50 144 H200','j');wire('M50 334 H200','k');
   wire('M55 250 H150 V176 H200','clk');wire('M150 250 V366 H200','clk');dot(150,250,'clk');
@@ -121,7 +121,7 @@ function circuitMarkup() {
   text(680,63,'← Q̅ återkopplas till J-sidan','svg-label');
   text(680,466,'← Q återkopplas till K-sidan','svg-label');
   value(55,125,'J','j');value(55,315,'K','k');value(55,235,'CLK','clk');
-  value(1125,138,'Q','q');value(1125,381,'Q̅','qBar');
+  value(1160,138,'Q','q');value(1160,381,'Q̅','qBar');
   text(440,480,'2 kapslar 7400 · 4 NAND per kapsel','svg-label','middle');
   return out.join('');
 }
