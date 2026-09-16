@@ -164,7 +164,7 @@ button:disabled {
   gap:24px
 }
 .high {
-  color:var(--high)
+  color:#ff3b30
 }
 .low {
   color:var(--low)
