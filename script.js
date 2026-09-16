@@ -176,20 +176,18 @@ function render() {
   for(const [id,v,label] of [['j',s.j,'J'],['k',sn?s.kBar:s.k,sn?'K̅':'K']]) {
     $(id).querySelector('strong').textContent=`${label} = ${v}`;$(id).setAttribute('aria-pressed',!!v);
   }
-  $('kCaption').textContent=sn?'INVERTERAD INGÅNG K̅':'INGÅNG K';
   $('pulse').hidden=race;$('auto').hidden=race;$('hold').hidden=!race;$('level').hidden=!sn;$('async').hidden=!sn;$('raceInfo').hidden=!race;
   $('pulse').disabled=busy||!!autoTimer;$('level').disabled=busy||!!autoTimer;
-  $('auto').textContent=autoTimer?'Ⅱ Stoppa klockan · 1 Hz':'▶ Automatisk klocka · 1 Hz';$('auto').setAttribute('aria-pressed',!!autoTimer);
-  $('hold').setAttribute('aria-pressed',!!state.clk);$('hold').textContent=state.clk?'CLK låst HIGH · stäng av [L]':'Lås CLK HIGH · slå på [L]';$('level').textContent=`CLK = ${state.clk} · växla nivå`;
-  $('clockHint').textContent=race?'Klicka eller tryck L för att låsa/släppa CLK. C växlar också klocknivån.':'Visuell klocka: 0,5 s hög + 0,5 s låg · labben använder 1 kHz';
+  buttonLabel('auto',autoTimer?'Ⅱ 1 Hz':'▶ 1 Hz','A');$('auto').setAttribute('aria-pressed',!!autoTimer);
+  $('hold').setAttribute('aria-pressed',!!state.clk);buttonLabel('hold',`CLK = ${state.clk}`,'L');buttonLabel('level',`CLK = ${state.clk}`,'L');$('level').setAttribute('aria-pressed',!!state.clk);
+  $('clockHint').textContent=race?'L: lås/släpp CLK · C används inte i denna vy.':'Visuell klocka: 0,5 s hög + 0,5 s låg · labben använder 1 kHz';
   for(const [id,key,label] of [['clear','clear','CLR̅'],['preset','preset','PRE̅']]) {
-    $(id).textContent=`${label} = ${state[key]?0:1} · ${state[key]?'aktiv':'inaktiv'}`;$(id).setAttribute('aria-pressed',state[key]);
+    buttonLabel(id,`${label} = ${state[key]?0:1}`,id==='clear'?'D':'P');$(id).setAttribute('aria-pressed',state[key]);
     $(id).disabled=state[key==='clear'?'preset':'clear'];
   }
   $('circuitTitle').textContent=sn?'Färdig JK · positivt flankstyrd':race?'Visuell demonstration · åtta NAND · 250 ms per växling':'Egenbyggd JK · åtta 2-ingångars NAND';
   $('circuit').setAttribute('aria-label',sn?'SN74LS109AN med J, inverterad K, klocka, utgångar och asynkrona kontroller':'Åtta NAND-grindar. Q-streck återkopplas till J-sidan, Q till K-sidan.');
   $('path').disabled=false;
-  $('clockShortcut').textContent=state.mode==='jk'?'C: en klockpuls':'C: växla CLK HIGH/LOW';
   $('circuit').querySelectorAll('[data-signal]').forEach(n=>{const v=s[n.dataset.signal];n.dataset.v=v;if(n.classList.contains('signal-value')) n.textContent=v;});
   $('outputs').textContent=`Q = ${s.q} · Q̅ = ${s.qBar}`;$('clockState').textContent=`CLK = ${s.clk} · ${s.clk?'HIGH':'LOW'}`;
   const op=operation();
@@ -233,7 +231,7 @@ document.addEventListener('keydown',event=>{
   const target=event.target;
   if(target?.isContentEditable || target?.closest?.('textarea,select,input:not([type="checkbox"]):not([type="radio"]):not([type="button"])')) return;
   const key=event.key.toLowerCase();
-  const controls={j:'j',k:'k',c:state.mode==='jk'?'pulse':state.mode==='race'?'hold':'level',l:'hold',v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full'};
+  const controls={j:'j',k:'k',c:state.mode==='race'?null:'pulse',l:state.mode==='race'?'hold':state.mode==='sn'?'level':null,v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full',t:'toggleTop',b:'toggleBottom'};
   if(['1','2','3'].includes(key)) {
     event.preventDefault();reset(['jk','race','sn'][Number(key)-1]);return;
   }
@@ -247,3 +245,62 @@ window.addEventListener('pagehide',stopClocks);
 $('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{$('fullscreenError').textContent='Helskärm stöds inte i detta webbläsarfönster.';}};
 new ResizeObserver(drawHistory).observe($('timing'));
 reset();
+setupResizablePanels();
+
+// Only labels built from our own fixed strings and binary state are inserted.
+function buttonLabel(id,label,key) {
+  $(id).innerHTML=`${label} <kbd>${key}</kbd>`;
+}
+
+// Fractional heights survive mode/viewport changes, but never exceed natural size.
+function setupResizablePanels() {
+  const panels=[['topPanel','toggleTop','T',1,.45],['bottomPanel','toggleBottom','B',-1,.32]].map(([id,toggleId,key,direction,viewportCap])=>({
+    root:$(id),toggle:$(toggleId),key,direction,viewportCap,fraction:1,max:0,
+    body:$(id).querySelector('.panel-body'),content:$(id).querySelector('.panel-content'),
+    handle:$(id).querySelector('.drag-handle')
+  }));
+  function apply(panel) {
+    const height=Math.round(panel.max*panel.fraction);
+    panel.body.style.height=`${height}px`;
+    panel.body.inert=height===0;
+    panel.body.setAttribute('aria-hidden',height===0?'true':'false');
+    panel.handle.setAttribute('aria-valuenow',Math.round(panel.fraction*100));
+    panel.toggle.setAttribute('aria-expanded',height>0);
+    buttonLabel(panel.toggle.id,height===0?'Visa':'Dölj',panel.key);
+    const cssName=panel.direction===1?'--top-panel-height':'--bottom-panel-height';
+    document.documentElement.style.setProperty(cssName,`${panel.root.getBoundingClientRect().height}px`);
+  }
+  function measure() {
+    for(const panel of panels) {
+      panel.max=Math.min(panel.content.getBoundingClientRect().height,window.innerHeight*panel.viewportCap);
+      apply(panel);
+    }
+  }
+  for(const panel of panels) {
+    let drag=null;
+    panel.toggle.onclick=()=>{panel.fraction=panel.fraction===0?1:0;apply(panel);};
+    panel.handle.onpointerdown=event=>{
+      if(event.button!==0)return;
+      event.preventDefault();
+      drag={y:event.clientY,height:panel.max*panel.fraction};
+      panel.handle.setPointerCapture(event.pointerId);
+    };
+    panel.handle.onpointermove=event=>{
+      if(!drag)return;
+      const height=drag.height+(event.clientY-drag.y)*panel.direction;
+      panel.fraction=Math.max(0,Math.min(1,height/Math.max(1,panel.max)));
+      apply(panel);
+    };
+    panel.handle.onpointerup=panel.handle.onpointercancel=panel.handle.onlostpointercapture=()=>{drag=null;};
+    // Standard keyboard behavior only when the separator itself is focused.
+    panel.handle.onkeydown=event=>{
+      if(!['ArrowUp','ArrowDown'].includes(event.key))return;
+      event.preventDefault();
+      panel.fraction=Math.max(0,Math.min(1,panel.fraction+(event.key==='ArrowDown'?1:-1)*panel.direction*.1));
+      apply(panel);
+    };
+    new ResizeObserver(measure).observe(panel.content);
+  }
+  window.addEventListener('resize',measure);
+  measure();
+}

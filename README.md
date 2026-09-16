@@ -30,8 +30,8 @@ reference only, not a device timing guarantee or a simulation parameter.
 
 The IC drawing represents one of the two flip-flops. It is a functional diagram,
 not a pinout. CLR/PRE use persistent on/off controls for easy observation.
-The race button is a persistent click/touch toggle. L or C toggles race CLK.
-J/K toggle inputs; C pulses normal JK or toggles IC CLK; V toggles signal paths;
+The race button is a persistent click/touch toggle. L toggles race CLK; C does nothing in the race view.
+J/K toggle inputs; C pulses normal JK and IC CLK; L toggles IC CLK; V toggles signal paths;
 A auto-clock; R reset; D clear; P preset; F fullscreen; 1–3 select modes.
 Shortcuts ignore key repeat, browser/OS modifier chords and text-entry fields.
 Signal paths work in all modes, including IC asynchronous controls. The race
@@ -43,3 +43,12 @@ Laboration7_JK-vippa.pdf (Laboration 7, Digitalteknik), supplied by the user.
 Visual tokens and NAND geometry follow the user's Master–Slave site:
 https://edvin9000.github.io/masterslav-1hz/
 The source lab PDF is not published with the site.
+
+## Resizable pinned panels
+
+The controls stay pinned at the top and the waveform at the bottom. Drag the
+separator at the bottom of the controls upward to shrink them; drag the separator
+above the waveform downward to shrink it. Heights are clamped from hidden to the
+original natural height (also capped for small viewports). A thin restore bar
+remains when hidden. T toggles the controls and B toggles the waveform. Heights
+persist across mode changes for this page session. Resizing does not reset logic.

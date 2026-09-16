@@ -655,18 +655,25 @@ footer details {
 .shortcuts {font-size:.875rem;color:var(--muted);line-height:1.7;margin:-8px 0 20px}
 .gate-shape.path-active {stroke:var(--x);stroke-width:3}
 
-/* Keep the study controls visible while the circuit and notes scroll. */
-.frozen-controls {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flow-root;
-  margin-top: -16px;
-  padding-top: 16px;
-  background: var(--bg);
-  box-shadow: 0 8px 12px var(--bg);
-  /* On short screens the toolbar scrolls internally, leaving room for content. */
-  max-height: 60vh;
-  max-height: 60dvh;
-  overflow-y: auto;
-}
+
+/* Pinned panels retain the original design; handles resize only their height. */
+:root {--top-panel-height:300px;--bottom-panel-height:310px}
+html {scroll-padding-top:calc(var(--top-panel-height) + 12px);scroll-padding-bottom:calc(var(--bottom-panel-height) + 12px)}
+main {padding-bottom:calc(var(--bottom-panel-height) + 32px)}
+.frozen-controls {position:sticky;top:0;z-index:10;background:var(--bg);margin-top:-16px;box-shadow:0 8px 12px var(--bg)}
+.frozen-controls .panel-content {display:flow-root;padding:16px 6px 0}
+.panel-body {overflow:auto;min-height:0}
+.frozen-timeline {position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:calc(100% - 64px);max-width:1376px;z-index:11;background:var(--bg);box-shadow:0 -8px 16px var(--bg)}
+.frozen-timeline .timing {border-radius:0;margin:0;padding:16px 24px}
+.panel-grip {display:flex;align-items:center;gap:12px;background:var(--surface);border-block:1px solid var(--line);min-height:30px}
+.drag-handle {flex:1;cursor:ns-resize;touch-action:none;user-select:none;text-align:center;font-size:12px;color:var(--muted);padding:8px;line-height:1.2}
+.drag-handle::before {content:'━';color:var(--high);margin-right:12px}
+.drag-handle:focus-visible {outline:2px solid var(--high);outline-offset:-2px}
+.panel-grip button {min-height:28px;padding:3px 10px;font-size:12px;border:0;border-left:1px solid var(--line);border-radius:0;background:transparent}
+kbd {font:600 .75rem Arial,Helvetica,sans-serif;display:inline-block;border:1px solid #587084;border-radius:4px;padding:2px 5px;margin-left:8px;color:var(--muted);line-height:1.3;white-space:nowrap}
+button[aria-pressed=true] kbd {color:var(--high);border-color:var(--high)}
+.toggle {display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:12px 18px}
+.toggle strong {font-size:1.25rem}
+.controls {margin-bottom:16px}
+#async {margin-bottom:16px}
+@media(max-width:650px) {.frozen-timeline {width:calc(100% - 32px)}.frozen-timeline .timing {padding:12px}.frozen-controls .panel-content {padding-inline:4px}.drag-handle {font-size:12px}.toggle {min-height:54px}}
