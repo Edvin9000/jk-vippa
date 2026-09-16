@@ -30,7 +30,12 @@ reference only, not a device timing guarantee or a simulation parameter.
 
 The IC drawing represents one of the two flip-flops. It is a functional diagram,
 not a pinout. CLR/PRE use persistent on/off controls for easy observation.
-The race button supports pointer/touch hold, Space hold, and Enter latch/release.
+The race button is a persistent click/touch toggle. L or C toggles race CLK.
+J/K toggle inputs; C pulses normal JK or toggles IC CLK; V toggles signal paths;
+A auto-clock; R reset; D clear; P preset; F fullscreen; 1–3 select modes.
+Shortcuts ignore key repeat, browser/OS modifier chords and text-entry fields.
+Signal paths work in all modes, including IC asynchronous controls. The race
+path has three 70 ms stages so every 250 ms toggle can show the entire loop.
 
 ## Sources
 

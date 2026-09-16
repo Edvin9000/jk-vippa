@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const initial = mode => ({mode, j:0, k:0, kBar:1, clk:0, q:0, clear:false, preset:false});
 let state = initial('jk'), history = [], step = 0, pulseNumber = 0;
 let autoTimer = null, pulseTimer = null, raceTimer = null, pathTimers = [];
-let busy = false, holding = false, raceCount = 0;
+let busy = false, raceCount = 0;
 const names = ['Hold – minne', 'Reset', 'Set', 'Toggle – växling'];
 function evaluateJK(j,k,q) { return j ? (k ? 1-q : 1) : (k ? 0 : q); }
 function effectiveK() { return state.mode === 'sn' ? 1-state.kBar : state.k; }
@@ -23,14 +23,18 @@ function setClock(value) {
       if(!state.clear && !state.preset) state.q = evaluateJK(state.j, 1-state.kBar, state.q);
     } else state.q = evaluateJK(state.j,state.k,state.q);
     animatePath();
-  } else stopRace();
+  } else {
+    stopRace();
+    if(state.mode === 'race') cancelPath();
+    if(state.mode === 'sn') animatePath('fall');
+  }
   commit();
   if(value && state.mode === 'race') startRace();
 }
 function startRace() {
   stopRace();
   if(state.clk && state.j && state.k) raceTimer = setInterval(()=>{
-    state.q = 1-state.q; raceCount++; commit();
+    state.q = 1-state.q; raceCount++; commit(); animatePath();
   },250);
 }
 function stopRace() { clearInterval(raceTimer); raceTimer = null; }
@@ -39,23 +43,42 @@ function cancelPath() {
   document.querySelectorAll('.path-active').forEach(n=>n.classList.remove('path-active'));
   $('pathStep').textContent='';
 }
-function animatePath() {
+function animatePath(reason='clock') {
   cancelPath();
-  if(!$('path').checked || state.mode!=='jk') return;
+  if(!$('path').checked) return;
   const op=operation(), upper=op===2 || (op===3 && state.q===1);
-  const route=op===0 ? [['clk','CLK blir hög'],['latch','Båda latchingångarna förblir 1 → minne']] :
-    [[upper?'j':'k',upper?'J aktiverar övre vägen':'K aktiverar nedre vägen'],[upper?'upper':'lower','Tre NAND bildar en 3-ingångars NAND'],['latch','Latchens lagrade tillstånd ändras'],['q','Q visas'],['qBar','Q̅ är motsatsen'],['feedback','Det nya tillståndet återkopplas']];
+  let route, delay=120;
+  if(state.mode==='sn') {
+    if(state.clear || state.preset) {
+      route=[[state.clear?'clearBar':'presetBar','Aktiv låg ingång → asynkron styrning'],['ic','CLR̅ / PRE̅ går före klockan'],['q','Q styrs utan klockflank'],['qBar','Q̅ är motsatsen']];
+    } else if(reason==='fall') {
+      route=[['clk','Fallande flank: Q behåller sitt tillstånd']];
+    } else if(reason==='input' || !state.clk || reason==='async') {
+      route=[['j','J och K̅ anger nästa operation'],['kBar','K̅ = 0 betyder K = 1'],['ic','Väntar på nästa uppåtflank; Q hålls kvar']];
+    } else {
+      route=[['clk','↑ Uppåtflanken läser J och K̅'],['ic',names[op]],['q','Q visas efter flanken'],['qBar','Q̅ är motsatsen']];
+    }
+  } else if(state.mode==='race' && state.clk && state.j && state.k) {
+    // Finish a full visual route before the next 250 ms feedback toggle.
+    delay=70;
+    route=[[upper?'upper':'lower','Den aktiva ingångsvägen påverkar låskretsen'],['latch','Q och Q̅ växlar'],['feedback','Återkoppling: CLK är fortfarande hög → nästa växling']];
+  } else if(!state.clk || op===0) {
+    route=[['clk',state.clk?'CLK är hög':'CLK är låg'],['latch','Låskretsen behåller sitt tillstånd']];
+  } else {
+    route=[[upper?'j':'k',upper?'J aktiverar övre vägen':'K aktiverar nedre vägen'],[upper?'upper':'lower','Tre NAND bildar en 3-ingångars NAND'],['latch','Latchens lagrade tillstånd visas'],['q','Q visas'],['qBar','Q̅ är motsatsen'],['feedback','Tillståndet återkopplas']];
+  }
   route.forEach(([group,label],i)=>pathTimers.push(setTimeout(()=>{
     document.querySelectorAll('.path-active').forEach(n=>n.classList.remove('path-active'));
     document.querySelectorAll(`[data-stage="${group}"]`).forEach(n=>n.classList.add('path-active'));
     $('pathStep').textContent=label;
-  },i*120)));
-  pathTimers.push(setTimeout(cancelPath,route.length*120+200));
+  },i*delay)));
+  pathTimers.push(setTimeout(cancelPath,route.length*delay+(state.mode==='race'?30:100)));
 }
 function stopClocks() {
   clearInterval(autoTimer); clearTimeout(pulseTimer); autoTimer=pulseTimer=null;
-  busy=false; holding=false; stopRace(); cancelPath();
+  busy=false; stopRace(); cancelPath();
   if(state.clk) setClock(0); else render();
+  cancelPath();
 }
 function pulseClock() {
   if(busy || autoTimer) return;
@@ -74,12 +97,12 @@ function setInput(key) {
     if(!(state.j && state.k)) state.q=evaluateJK(state.j,state.k,state.q);
     startRace();
   }
-  commit();
+  commit(); animatePath('input');
 }
 function setAsync(key) {
   state[key]=!state[key];
   if(state[key]) {state[key==='clear'?'preset':'clear']=false;state.q=key==='clear'?0:1;}
-  commit();
+  commit(); animatePath('async');
 }
 // SVG geometry intentionally matches the Master–Slave sister site.
 function markupHelpers() {
@@ -104,10 +127,10 @@ function circuitMarkup() {
     wire(`M280 ${y} H315 V${y-16} H360`,p+'1',stage);
     wire(`M315 ${y} V${y+16} H360`,p+'1',stage);dot(315,y,p+'1');
     wire(`M440 ${y} H495 V${y-16} H560`,p+'2',stage);
-    wire(`M640 ${y} H810 V${y-16} H850`,p+'3',stage);
+    wire(`M640 ${y} H810 V${y===160?y-16:y+16} H850`,p+'3',stage);
     gate(200,y,'N'+id,stage);gate(360,y,'N'+(id+1),stage);gate(560,y,'N'+(id+2),stage);
     gate(850,y,y===160?'N7':'N8','latch');
-    value(723,y-26,y===160?'S̅':'R̅',p+'3');
+    value(723,y===160?y-26:y+50,y===160?'S̅':'R̅',p+'3');
   }
   wire('M930 160 H1215','q');wire('M930 350 H1215','qBar');
   // Local cross-coupling: crossing has no junction.
@@ -127,7 +150,7 @@ function circuitMarkup() {
 }
 function icMarkup() {
   const {out,wire,text,value}=markupHelpers();
-  out.push('<rect x="460" y="80" width="390" height="330" rx="12" class="gate-shape"/>');
+  out.push('<rect x="460" y="80" width="390" height="330" rx="12" class="gate-shape" data-stage="ic"/>');
   text(655,135,'SN74LS109AN','ic-title');text(655,168,'Vippa 1 av 2 · funktionellt block','ic-note');
   for(const [y,s,label] of [[220,'j','J'],[290,'kBar','K̅'],[360,'clk','CLK ↑']]) {
     wire(`M160 ${y} H460`,s);value(170,y-20,label,s);text(480,y+7,label);
@@ -157,20 +180,21 @@ function render() {
   $('pulse').hidden=race;$('auto').hidden=race;$('hold').hidden=!race;$('level').hidden=!sn;$('async').hidden=!sn;$('raceInfo').hidden=!race;
   $('pulse').disabled=busy||!!autoTimer;$('level').disabled=busy||!!autoTimer;
   $('auto').textContent=autoTimer?'Ⅱ Stoppa klockan · 1 Hz':'▶ Automatisk klocka · 1 Hz';$('auto').setAttribute('aria-pressed',!!autoTimer);
-  $('hold').setAttribute('aria-pressed',!!state.clk);$('level').textContent=`CLK = ${state.clk} · växla nivå`;
-  $('clockHint').textContent=race?'Håll med mus/touch eller mellanslag. Alternativ: Enter låser/lossar CLK.':'Visuell klocka: 0,5 s hög + 0,5 s låg · labben använder 1 kHz';
+  $('hold').setAttribute('aria-pressed',!!state.clk);$('hold').textContent=state.clk?'CLK låst HIGH · stäng av [L]':'Lås CLK HIGH · slå på [L]';$('level').textContent=`CLK = ${state.clk} · växla nivå`;
+  $('clockHint').textContent=race?'Klicka eller tryck L för att låsa/släppa CLK. C växlar också klocknivån.':'Visuell klocka: 0,5 s hög + 0,5 s låg · labben använder 1 kHz';
   for(const [id,key,label] of [['clear','clear','CLR̅'],['preset','preset','PRE̅']]) {
     $(id).textContent=`${label} = ${state[key]?0:1} · ${state[key]?'aktiv':'inaktiv'}`;$(id).setAttribute('aria-pressed',state[key]);
     $(id).disabled=state[key==='clear'?'preset':'clear'];
   }
   $('circuitTitle').textContent=sn?'Färdig JK · positivt flankstyrd':race?'Visuell demonstration · åtta NAND · 250 ms per växling':'Egenbyggd JK · åtta 2-ingångars NAND';
   $('circuit').setAttribute('aria-label',sn?'SN74LS109AN med J, inverterad K, klocka, utgångar och asynkrona kontroller':'Åtta NAND-grindar. Q-streck återkopplas till J-sidan, Q till K-sidan.');
-  $('path').disabled=sn||race;
+  $('path').disabled=false;
+  $('clockShortcut').textContent=state.mode==='jk'?'C: en klockpuls':'C: växla CLK HIGH/LOW';
   $('circuit').querySelectorAll('[data-signal]').forEach(n=>{const v=s[n.dataset.signal];n.dataset.v=v;if(n.classList.contains('signal-value')) n.textContent=v;});
   $('outputs').textContent=`Q = ${s.q} · Q̅ = ${s.qBar}`;$('clockState').textContent=`CLK = ${s.clk} · ${s.clk?'HIGH':'LOW'}`;
   const op=operation();
   $('status').textContent=sn&&(s.clear||s.preset)?`${s.clear?'CLR̅ → Reset':'PRE̅ → Set'} · asynkront`:race&&s.clk&&s.j&&s.k?`Tävling · Q återkopplas och växlar igen (${raceCount} upprepningar)`:names[op];
-  $('detail').textContent=sn?(s.clear||s.preset?'Den aktiva låga ingången styr Q direkt, oberoende av J, K̅ och CLK. Släpp kontrollen för vanlig klockning.':`Nästa ↑ ger ${names[op]}. Att hålla CLK hög eller ändra J/K̅ utan en ny uppåtflank ändrar inte Q. Två Toggle-pulser ger en hel period av Q.`):race?'Sätt J = K = 1 och håll CLK hög. Nya Q och Q̅ återkopplas till ingångslogiken och utlöser nästa växling. Släpp CLK så stannar Q på det senast visade värdet.':[
+  $('detail').textContent=sn?(s.clear||s.preset?'Den aktiva låga ingången styr Q direkt, oberoende av J, K̅ och CLK. Släpp kontrollen för vanlig klockning.':`Nästa ↑ ger ${names[op]}. Att hålla CLK hög eller ändra J/K̅ utan en ny uppåtflank ändrar inte Q. Två Toggle-pulser ger en hel period av Q.`):race?'Sätt J = K = 1 och lås CLK hög med knappen eller L. Nya Q och Q̅ återkopplas till ingångslogiken och utlöser nästa växling. Släpp CLK så stannar Q på det senast visade värdet.':[
     'När J = K = 0 behåller vippan sitt tidigare tillstånd. Båda latchingångarna är inaktiva (1).',
     'K = 1 begär Reset: vid pulsen blir Q = 0 och Q̅ = 1. Q återkopplas till K-sidan.',
     'J = 1 begär Set: vid pulsen blir Q = 1 och Q̅ = 0. Q̅ återkopplas till J-sidan.',
@@ -201,14 +225,22 @@ $('pulse').onclick=pulseClock;$('init').onclick=()=>reset();
 $('auto').onclick=()=>{if(autoTimer){stopClocks();return;}stopClocks();autoTimer=setInterval(()=>setClock(1-state.clk),500);setClock(1);};
 $('level').onclick=()=>setClock(1-state.clk);
 $('clear').onclick=()=>setAsync('clear');$('preset').onclick=()=>setAsync('preset');
-$('path').onchange=()=>{if(!$('path').checked)cancelPath();};
-function releaseHold() {if(holding){holding=false;setClock(0);}}
-$('hold').onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();holding=true;$('hold').setPointerCapture(e.pointerId);setClock(1);};
-$('hold').onpointerup=releaseHold;$('hold').onpointercancel=releaseHold;$('hold').onlostpointercapture=releaseHold;
-$('hold').onkeydown=e=>{if(e.code==='Space'){e.preventDefault();if(!e.repeat){holding=true;setClock(1);}}else if(e.code==='Enter'){e.preventDefault();if(!e.repeat){holding=!state.clk;setClock(1-state.clk);}}};
-$('hold').onkeyup=e=>{if(e.code==='Space'){e.preventDefault();releaseHold();}};
-$('hold').onblur=releaseHold;
-window.addEventListener('blur',()=>{if(state.mode==='race')releaseHold();});
+$('path').onchange=()=>{if($('path').checked)animatePath('input');else cancelPath();};
+$('hold').onclick=()=>setClock(1-state.clk);
+// Plain letter keys only. Never intercept browser/OS chords or text editing.
+document.addEventListener('keydown',event=>{
+  if(event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+  const target=event.target;
+  if(target?.isContentEditable || target?.closest?.('textarea,select,input:not([type="checkbox"]):not([type="radio"]):not([type="button"])')) return;
+  const key=event.key.toLowerCase();
+  const controls={j:'j',k:'k',c:state.mode==='jk'?'pulse':state.mode==='race'?'hold':'level',l:'hold',v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full'};
+  if(['1','2','3'].includes(key)) {
+    event.preventDefault();reset(['jk','race','sn'][Number(key)-1]);return;
+  }
+  const control=controls[key] && $(controls[key]);
+  if(!control || control.disabled || control.hidden || (['d','p'].includes(key) && state.mode!=='sn')) return;
+  event.preventDefault();control.click();
+});
 window.addEventListener('pagehide',stopClocks);
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopClocks();});
  document.querySelectorAll('[data-mode]').forEach(n=>n.onclick=()=>reset(n.dataset.mode));
