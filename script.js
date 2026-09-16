@@ -209,8 +209,8 @@ function drawHistory() {
   const rows=state.mode==='race'?[['CLK','clk'],['J','j'],['K','k'],['Q','q'],['Q̅','qBar']]:[['CLK','clk'],['J','j'],[sn?'K̅':'K',sn?'kBar':'k'],['Q','q'],['Q̅','qBar']];
   let out='';
   rows.forEach(([name,key],r)=>{const y=15+r*38;out+=`<text x="0" y="${y+12}" fill="#b7cad8" font-size="14">${name}</text><path d="M${left} ${y+18} H${right}" stroke="#24394b"/>`;
-    history.forEach((s,i)=>{const x=left+i*slot,v=s[key],yy=y+(v?0:18),prev=history[i-1];out+=`<path d="M${x} ${yy} H${x+slot}" stroke="${v?'#56dded':'#8497ad'}" stroke-width="2.5"/>`;
-      if(prev&&prev[key]!==v) out+=`<path d="M${x} ${y+(prev[key]?0:18)} V${yy}" stroke="#56dded" stroke-width="2"/>`;
+    history.forEach((s,i)=>{const x=left+i*slot,v=s[key],yy=y+(v?0:18),prev=history[i-1];out+=`<path d="M${x} ${yy} H${x+slot}" stroke="${v?'#ff3b30':'#8497ad'}" stroke-width="2.5"/>`;
+      if(prev&&prev[key]!==v) out+=`<path d="M${x} ${y+(prev[key]?0:18)} V${yy}" stroke="#ff3b30" stroke-width="2"/>`;
       if(r===0&&s.clk&&prev&&!prev.clk&&sn) out+=`<text x="${x+3}" y="${y+32}" fill="#ffc471" font-size="13">↑</text>`;
     });
   });
