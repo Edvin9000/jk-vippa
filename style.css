@@ -188,7 +188,7 @@ button:disabled {
   stroke-linecap:round
 }
 .wire[data-v="1"] {
-  stroke:var(--high)
+  stroke:#ff3b30
 }
 .wire[data-v="0"] {
   stroke:var(--low)
@@ -198,7 +198,7 @@ button:disabled {
   stroke-dasharray:7 5
 }
 .junction[data-v="1"] {
-  fill:var(--high)
+  fill:#ff3b30
 }
 .junction[data-v="0"] {
   fill:var(--low)
@@ -247,7 +247,7 @@ button:disabled {
   font-variant-numeric:tabular-nums
 }
 .signal-value[data-v="1"] {
-  fill:var(--high)
+  fill:#ff3b30
 }
 .signal-value[data-v="0"] {
   fill:var(--low)
