@@ -1,6 +1,7 @@
 <!doctype html>
-<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>JK-vippa · Digitalteknik</title><link rel="stylesheet" href="style.css?v=3"><script defer src="script.js?v=3"></script></head>
+<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>JK-vippa · Digitalteknik</title><link rel="stylesheet" href="style.css?v=4"><script defer src="script.js?v=3"></script></head>
 <body><main>
+<div class="frozen-controls" role="region" aria-label="Fasta kontroller">
 <header><div><p class="eyebrow">DIGITALTEKNIK / INTERAKTIV LABORATION 7</p><h1>JK-vippa <span id="subtitle">8 NAND · återkoppling och minne</span></h1></div><button id="full" aria-keyshortcuts="F" class="quiet">Helskärm ↗</button></header>
 <nav aria-label="Laborationens steg"><button data-mode="jk" aria-current="page">1 · JK-vippa</button><button data-mode="race">2 · Race-around / Tävling</button><button data-mode="sn">3 · SN74LS109AN</button></nav>
 <div class="controls">
@@ -10,6 +11,7 @@
 <button id="init" aria-keyshortcuts="R" class="quiet">Återställ</button></div>
 <div id="async" hidden><button id="clear" aria-keyshortcuts="D" aria-pressed="false">CLR̅ = 1 · inaktiv</button><button id="preset" aria-keyshortcuts="P" aria-pressed="false">PRE̅ = 1 · inaktiv</button><span>Aktiva låga. Klicka för att aktivera eller släppa. Ingen klockpuls behövs.</span></div>
 <p class="shortcuts" aria-label="Kortkommandon">J / K: växla ingång · <span id="clockShortcut">C: en klockpuls</span> · L: lås/släpp CLK i Tävling · V: signalväg · A: automatisk klocka · R: återställ · D: CLR̅ · P: PRE̅ · F: helskärm · 1–3: byt vy</p>
+</div>
 <section class="diagram-panel" aria-label="Interaktiv krets"><div class="diagram-top"><span id="circuitTitle">Egenbyggd JK · åtta 2-ingångars NAND</span><div class="legend"><span class="high">HIGH = 1</span><span class="low">LOW = 0</span><label><input type="checkbox" id="path" aria-keyshortcuts="V"> Visa signalväg [V]</label></div></div><div class="diagram-scroll"><svg id="circuit" viewBox="0 0 1280 500" role="img" aria-label="Åtta NAND-grindar med Q-streck återkopplat till J och Q till K"></svg></div><div class="phase-labels"><div><b>KLOCKA</b><span id="clockState">CLK = 0 · LOW</span></div><div><b>UTGÅNGAR</b><span id="outputs">Q = 0 · Q̅ = 1</span></div></div></section>
 <section class="explanation"><div id="status" role="status"></div><p id="detail"></p><p id="simplification"></p><p id="pathStep" aria-live="polite"></p></section>
 <section id="raceInfo" class="timing" hidden><h2>Laborationens tidsexempel · separat från animationen</h2><p>CLK = <b>1 kHz</b> → T = 1 / 1000 = <b>1 ms</b>. Vid 50 % pulskvot är CLK hög ≈ <b>0,5 ms = 500 µs = 500 000 ns</b>.</p><p>Exempel: ett varv i återkopplingsslingan ≈ <b>40 ns</b>. Antal möjliga varv: 500 000 / 40 ≈ <b>12 500</b>. Detta är en uppskattning av slingvarv, inte ett exakt antal uppmätta växlingar.</p></section>

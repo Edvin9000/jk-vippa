@@ -654,3 +654,19 @@ footer details {
 
 .shortcuts {font-size:.875rem;color:var(--muted);line-height:1.7;margin:-8px 0 20px}
 .gate-shape.path-active {stroke:var(--x);stroke-width:3}
+
+/* Keep the study controls visible while the circuit and notes scroll. */
+.frozen-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flow-root;
+  margin-top: -16px;
+  padding-top: 16px;
+  background: var(--bg);
+  box-shadow: 0 8px 12px var(--bg);
+  /* On short screens the toolbar scrolls internally, leaving room for content. */
+  max-height: 60vh;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
