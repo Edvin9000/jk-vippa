@@ -86,6 +86,11 @@ function pulseClock() {
   busy=true; setClock(1);
   pulseTimer=setTimeout(()=>{setClock(0);pulseTimer=setTimeout(()=>{busy=false;pulseTimer=null;render();},500);},500);
 }
+// Extend the timeline without evaluating logic or generating a clock edge.
+function nextStep() {
+  if(busy || autoTimer || (state.mode==='race' && state.clk && state.j && state.k)) return;
+  record(); drawHistory();
+}
 function reset(mode=state.mode) {
   stopClocks(); state=initial(mode); history=[];step=0;pulseNumber=0;raceCount=0;
   $('circuit').innerHTML = mode==='sn' ? icMarkup() : circuitMarkup();
@@ -177,6 +182,7 @@ function render() {
     $(id).querySelector('strong').textContent=`${label} = ${v}`;$(id).setAttribute('aria-pressed',!!v);
   }
   $('pulse').hidden=race;$('auto').hidden=race;$('hold').hidden=!race;$('level').hidden=!sn;$('async').hidden=!sn;$('raceInfo').hidden=!race;
+  $('advance').disabled=busy||!!autoTimer||(race && !!state.clk && !!state.j && !!state.k);
   $('pulse').disabled=busy||!!autoTimer;$('level').disabled=busy||!!autoTimer;
   buttonLabel('auto',autoTimer?'Ⅱ 1 Hz':'▶ 1 Hz','A');$('auto').setAttribute('aria-pressed',!!autoTimer);
   $('hold').setAttribute('aria-pressed',!!state.clk);buttonLabel('hold',`CLK = ${state.clk}`,'L');buttonLabel('level',`CLK = ${state.clk}`,'L');$('level').setAttribute('aria-pressed',!!state.clk);
@@ -219,6 +225,7 @@ function drawHistory() {
   svg.setAttribute('viewBox',`0 0 ${w} 225`);svg.innerHTML=out;
 }
 $('j').onclick=()=>setInput('j');$('k').onclick=()=>setInput(state.mode==='sn'?'kBar':'k');
+$('advance').onclick=nextStep;
 $('pulse').onclick=pulseClock;$('init').onclick=()=>reset();
 $('auto').onclick=()=>{if(autoTimer){stopClocks();return;}stopClocks();autoTimer=setInterval(()=>setClock(1-state.clk),500);setClock(1);};
 $('level').onclick=()=>setClock(1-state.clk);
@@ -231,7 +238,7 @@ document.addEventListener('keydown',event=>{
   const target=event.target;
   if(target?.isContentEditable || target?.closest?.('textarea,select,input:not([type="checkbox"]):not([type="radio"]):not([type="button"])')) return;
   const key=event.key.toLowerCase();
-  const controls={j:'j',k:'k',c:state.mode==='race'?null:'pulse',l:state.mode==='race'?'hold':state.mode==='sn'?'level':null,v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full',t:'toggleTop',b:'toggleBottom'};
+  const controls={n:'advance',j:'j',k:'k',c:state.mode==='race'?null:'pulse',l:state.mode==='race'?'hold':state.mode==='sn'?'level':null,v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full',t:'toggleTop',b:'toggleBottom'};
   if(['1','2','3'].includes(key)) {
     event.preventDefault();reset(['jk','race','sn'][Number(key)-1]);return;
   }
