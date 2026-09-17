@@ -181,7 +181,7 @@ function render() {
   for(const [id,v,label] of [['j',s.j,'J'],['k',sn?s.kBar:s.k,sn?'K̅':'K']]) {
     $(id).querySelector('strong').textContent=`${label} = ${v}`;$(id).setAttribute('aria-pressed',!!v);
   }
-  $('pulse').hidden=race;$('auto').hidden=race;$('hold').hidden=!race;$('level').hidden=!sn;$('async').hidden=!sn;$('raceInfo').hidden=!race;
+  $('pulse').hidden=race;$('auto').hidden=race;$('hold').hidden=!race;$('level').hidden=race;$('async').hidden=!sn;$('raceInfo').hidden=!race;
   $('advance').disabled=busy||!!autoTimer||(race && !!state.clk && !!state.j && !!state.k);
   $('pulse').disabled=busy||!!autoTimer;$('level').disabled=busy||!!autoTimer;
   buttonLabel('auto',autoTimer?'Ⅱ 1 Hz':'▶ 1 Hz','A');$('auto').setAttribute('aria-pressed',!!autoTimer);
@@ -238,7 +238,7 @@ document.addEventListener('keydown',event=>{
   const target=event.target;
   if(target?.isContentEditable || target?.closest?.('textarea,select,input:not([type="checkbox"]):not([type="radio"]):not([type="button"])')) return;
   const key=event.key.toLowerCase();
-  const controls={n:'advance',j:'j',k:'k',c:state.mode==='race'?null:'pulse',l:state.mode==='race'?'hold':state.mode==='sn'?'level':null,v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full',t:'toggleTop',b:'toggleBottom'};
+  const controls={n:'advance',j:'j',k:'k',c:state.mode==='race'?null:'pulse',l:state.mode==='race'?'hold':'level',v:'path',a:'auto',r:'init',d:'clear',p:'preset',f:'full',t:'toggleTop',b:'toggleBottom'};
   if(['1','2','3'].includes(key)) {
     event.preventDefault();reset(['jk','race','sn'][Number(key)-1]);return;
   }
